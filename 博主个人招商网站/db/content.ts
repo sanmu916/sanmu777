@@ -13,6 +13,14 @@ export async function readSiteContent(): Promise<SiteContent> {
 }
 
 export async function readPublicSiteContent(): Promise<SiteContent> {
+  // The public Vercel release is exported once during the build.  Avoid
+  // contacting third-party platforms while rendering that static snapshot:
+  // their anti-bot protections can otherwise make an otherwise valid build
+  // fail. Runtime/local previews still use the normal daily refresh below.
+  if (process.env.STATIC_EXPORT === "true") {
+    return localPreviewContent;
+  }
+
   if (publicMemoryCache) {
     const refreshedAt = Date.parse(publicMemoryCache.lastAutoRefresh);
     if (Number.isFinite(refreshedAt) && Date.now() - refreshedAt < 24 * 60 * 60 * 1000) {
